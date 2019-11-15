@@ -56,7 +56,6 @@ def update_vertexplot(num, masses, vertexplot):
     x = [row[0] for row in data]
     y = [row[1] for row in data]
     z = [row[2] for row in data]
-    print("xyz", x, y, z)
     for i,vertex in enumerate(vertexplot):
         vertex[0].set_data([[x[i]],[y[i]]])
         vertex[0].set_3d_properties([z[i]])
@@ -78,6 +77,7 @@ def update_vertexplot(num, masses, vertexplot):
 def calculate_forces():
     # YOUR CALCULATIONS HERE
     # REMMEBER ITS IN 3D, EVERYTHING IS A VECTOR
+    forces = []
     for mass in masses:
         force = mass.mass * GRAVITY
 
@@ -100,10 +100,11 @@ def calculate_forces():
 
         if mass.position[2] < 0:
             restorative = [0, 0, - k_ground * mass.position[2]]
-            print(mass.position[2])
             force = force + restorative
+        forces.append(force)
 
-        print("final force", force)
+    for i, mass in enumerate(masses):
+        force = forces[i]
         acceleration = force / mass.mass
         velocity = mass.velocity + acceleration * TIMESTEP
         position = mass.position + velocity * TIMESTEP
@@ -145,6 +146,6 @@ ax.set_title('Physics Cube')
 
 # Creating the Animation object
 line_ani = animation.FuncAnimation(fig, update_vertexplot, 25, fargs=(masses, vertexplot),
-                                   interval=200, blit=False)
+                                   interval=50, blit=False)
 
 plt.show()
