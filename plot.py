@@ -9,7 +9,7 @@ from physics_cube import Mass, Spring
 np.random.seed(19680801)
 
 GRAVITY = np.array([0, 0, -9.81])
-TIMESTEP = 0.001 #why is the timestep so small tho. The animation refreshes every 50ms
+TIMESTEP = 0.002 #why is the timestep so small tho. The animation refreshes every 50ms
 time = 0
 damping = 0.9999
 friction_mu_s = 1
@@ -17,7 +17,7 @@ friction_mu_k = 0.8
 k_vertexplot_soft = 2000
 k_ground = 10000
 omega = 10 
-k = 10000
+k = 9000
 
 
 def gen_square(edge, origin):
@@ -49,6 +49,17 @@ def gen_square(edge, origin):
 
     return masses, springs
 
+def rotateCube():
+    a = 0.785 #approx pi/4 bc I'm lazy
+    trans_x = np.array([[1, 0, 0],
+                        [0, np.cos(a), -np.sin(a)],
+                        [0, np.sin(a), np.cos(a)]])
+    trans_y = np.array([[np.cos(a), 0, np.sin(a)],
+                        [0, 1, 0],
+                        [-np.sin(a), 0, np.cos(a)]])
+    for mass in masses:
+        mass.update_pos(mass.position @ trans_x)
+        mass.update_pos(mass.position @ trans_y)
 
 def update_vertexplot(num, masses, vertexplot):
     calculate_forces()
@@ -93,9 +104,9 @@ def calculate_forces():
                 force_direction = force_direction / np.linalg.norm(force_direction)
                 spring_force = k * (spring.getLength() - spring.getL0())
                 spring_force_vector = spring_force * force_direction
-                print("length difference", spring.getLength() - spring.getL0())
-                print("spring force", mass, "val", spring_force)
-                print("spring_force_vector", spring_force_vector, "dir", force_direction)
+                #print("length difference", spring.getLength() - spring.getL0())
+                #print("spring force", mass, "val", spring_force)
+                #print("spring_force_vector", spring_force_vector, "dir", force_direction)
             force = force + spring_force_vector
 
         if mass.position[2] < 0:
@@ -115,7 +126,8 @@ fig = plt.figure()
 ax = p3.Axes3D(fig)
 
 # One 3D Cube
-masses, springs = gen_square(0.1, [0.2, 0.2, 0.5])
+masses, springs = gen_square(0.1, [.5, 0.5, 0.5])
+rotateCube()
 
 data = np.array([[mass.position[0], mass.position[1], mass.position[2]] for mass in masses])
 sdata = []
@@ -145,7 +157,7 @@ ax.set_zlabel('Z ')
 ax.set_title('Physics Cube')
 
 # Creating the Animation object
-line_ani = animation.FuncAnimation(fig, update_vertexplot, 25, fargs=(masses, vertexplot),
-                                   interval=50, blit=False)
+line_ani = animation.FuncAnimation(fig, update_vertexplot, fargs=(masses, vertexplot),
+                                   interval=3, blit=False)
 
 plt.show()
