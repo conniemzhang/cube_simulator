@@ -27,10 +27,26 @@ class Mass():
         return 'Mass({})'.format(', '.join(map(str, self.position)))
 
 class Spring():
-    def __init__(self, length, k, masses):
+    def __init__(self, k, length, masses):
+        self.original_length = length
         self.length = length
         self.k = k
         self.masses = masses
 
+    # returns a LIST of masses [mass, mass]
     def getMasses(self):
         return np.ndarray.tolist(self.masses[0].position), np.ndarray.tolist(self.masses[1].position)
+
+    def getMassOne(self):
+        return self.masses[0]
+
+    def getMassTwo(self):
+        return self.masses[1]
+
+    # returns float of current spring length
+    def getLength(self):
+        self.length = np.linalg.norm(self.masses[1].position - self.masses[0].position)
+        return self.length
+
+    def getL0(self):
+        return self.original_length
