@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import mpl_toolkits.mplot3d.axes3d as p3
 import matplotlib.animation as animation
+import matplotlib.cm as cm
 from physics_cube import Mass, Spring
 
 # Fixing random state for reproducibility
@@ -14,9 +15,9 @@ damping = 0.9999
 friction_mu_s = 1
 friction_mu_k = 0.8
 k_vertexplot_soft = 2000
-k_ground = 5000
+k_ground = 10000
 omega = 10 
-k = 5000
+k = 10000
 
 
 def gen_square(edge, origin):
@@ -55,8 +56,10 @@ def update_vertexplot(num, masses, vertexplot):
     x = [row[0] for row in data]
     y = [row[1] for row in data]
     z = [row[2] for row in data]
-    vertexplot[0].set_data([x,y])
-    vertexplot[0].set_3d_properties(z)
+    print("xyz", x, y, z)
+    for i,vertex in enumerate(vertexplot):
+        vertex[0].set_data([[x[i]],[y[i]]])
+        vertex[0].set_3d_properties([z[i]])
 
     sdata = []
     for spring in springs:
@@ -78,9 +81,9 @@ def calculate_forces():
     for mass in masses:
         force = mass.mass * GRAVITY
 
-        spring_force_vector = [0,0,0] # scalar to be mult by direction
         for spring in springs:
             force_direction = [0,0,0] # needs right direction depending on which mass you're calculating for
+            spring_force_vector = [0,0,0] #final 
             if mass == spring.getMassOne() or mass == spring.getMassTwo():
                 if mass == spring.getMassOne():
                     force_direction = spring.getMassTwo().position - spring.getMassOne().position
@@ -93,7 +96,7 @@ def calculate_forces():
                 print("length difference", spring.getLength() - spring.getL0())
                 print("spring force", mass, "val", spring_force)
                 print("spring_force_vector", spring_force_vector, "dir", force_direction)
-        force = force + spring_force_vector
+            force = force + spring_force_vector
 
         if mass.position[2] < 0:
             restorative = [0, 0, - k_ground * mass.position[2]]
@@ -111,7 +114,7 @@ fig = plt.figure()
 ax = p3.Axes3D(fig)
 
 # One 3D Cube
-masses, springs = gen_square(0.1, [0, 0, 1])
+masses, springs = gen_square(0.1, [0.2, 0.2, 0.5])
 
 data = np.array([[mass.position[0], mass.position[1], mass.position[2]] for mass in masses])
 sdata = []
@@ -120,8 +123,12 @@ for i, spring in enumerate(springs):
     sdata.append(spring.masses[1].position)
 sdata = np.array(sdata)
 
-colors=['red','green','blue','black']
-vertexplot = ax.plot(data[:,0], data[:,1], data[:,2], 'bo')
+colors = cm.rainbow(np.linspace(0, 1, len(masses)))
+vertexplot = [None] * len(masses)
+for i, (mass, color) in enumerate(zip(masses, colors)):
+    pos = mass.position
+    vertexplot[i] = (ax.plot([pos[0]], [pos[1]], [pos[2]], 'o', c = color))
+#vertexplot = ax.plot(data[:,0], data[:,1], data[:,2], 'bo')
 springplot = ax.plot(sdata[:,0], sdata[:,1], sdata[:,2])
 
 # Setting the axes properties
@@ -138,6 +145,6 @@ ax.set_title('Physics Cube')
 
 # Creating the Animation object
 line_ani = animation.FuncAnimation(fig, update_vertexplot, 25, fargs=(masses, vertexplot),
-                                   interval=50, blit=False)
+                                   interval=200, blit=False)
 
 plt.show()
