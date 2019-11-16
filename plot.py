@@ -3,21 +3,19 @@ import matplotlib.pyplot as plt
 import mpl_toolkits.mplot3d.axes3d as p3
 import matplotlib.animation as animation
 import matplotlib.cm as cm
+import math as math
 from physics_cube import Mass, Spring
 
 # Fixing random state for reproducibility
 np.random.seed(19680801)
 
 GRAVITY = np.array([0, 0, -9.81])
-TIMESTEP = 0.002 #why is the timestep so small tho. The animation refreshes every 50ms
-time = 0
-damping = 0.9999
+TIMESTEP = 0.002 
 friction_mu_s = 1
 friction_mu_k = 0.8
-k_vertexplot_soft = 2000
 k_ground = 10000
 omega = 10 
-k = 9000
+k = 8000
 
 
 def gen_square(edge, origin):
@@ -49,15 +47,15 @@ def gen_square(edge, origin):
 
     return masses, springs
 
-def rotateCube():
-    a = 0.785 #approx pi/4 bc I'm lazy
+def rotateCube(passmass):
+    a = np.random.rand() * math.pi
     trans_x = np.array([[1, 0, 0],
                         [0, np.cos(a), -np.sin(a)],
                         [0, np.sin(a), np.cos(a)]])
     trans_y = np.array([[np.cos(a), 0, np.sin(a)],
                         [0, 1, 0],
                         [-np.sin(a), 0, np.cos(a)]])
-    for mass in masses:
+    for mass in passmass:
         mass.update_pos(mass.position @ trans_x)
         mass.update_pos(mass.position @ trans_y)
 
@@ -126,8 +124,23 @@ fig = plt.figure()
 ax = p3.Axes3D(fig)
 
 # One 3D Cube
-masses, springs = gen_square(0.1, [.5, 0.5, 0.5])
-rotateCube()
+masses, springs = gen_square(0.15, [.5, 0.5, 0.5])
+masses2, spring2 = gen_square(0.15, [0.2, 0.2, 0.7])
+masses3, spring3 = gen_square(0.1, [0.4, 0.4, 1.0])
+
+rotateCube(masses)
+rotateCube(masses2)
+rotateCube(masses3)
+
+for mass2 in masses2:
+    masses.append(mass2)
+for spring2 in spring2:
+    springs.append(spring2)
+
+for mass3 in masses3:
+    masses.append(mass3)
+for spring3 in spring3:
+    springs.append(spring3)
 
 data = np.array([[mass.position[0], mass.position[1], mass.position[2]] for mass in masses])
 sdata = []
@@ -158,6 +171,6 @@ ax.set_title('Physics Cube')
 
 # Creating the Animation object
 line_ani = animation.FuncAnimation(fig, update_vertexplot, fargs=(masses, vertexplot),
-                                   interval=3, blit=False)
+                                   interval=15, blit=False)
 
 plt.show()
