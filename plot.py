@@ -10,12 +10,13 @@ from physics_cube import Mass, Spring
 np.random.seed(19680801)
 
 GRAVITY = np.array([0, 0, -9.81])
-TIMESTEP = 0.002 
+TIMESTEP = 0.002
+global_time = 0 
 friction_mu_s = 1
 friction_mu_k = 0.8
 k_ground = 10000
 omega = 10 
-k = 8000
+k = 10000
 
 
 def gen_square(edge, origin):
@@ -47,6 +48,47 @@ def gen_square(edge, origin):
 
     return masses, springs
 
+def gen_tetrahedron(edge, origin):
+    """
+    Create a square with lengths length
+    lower corner is the "origin" of square
+    """
+    mass = 0.1
+    masses = [None] * 4
+    springs = []
+    masses[0] = Mass(mass, np.array(origin))
+    masses[1] = Mass(mass, np.array([origin[0] + edge, origin[1], origin[2]]))
+    #masses[2] = Mass(mass, np.array([origin[0] + edge, origin[1] + edge, origin[2]]))
+    masses[2] = Mass(mass, np.array([origin[0], origin[1] + edge, origin[2]]))
+    masses[3] = Mass(mass, np.array([origin[0], origin[1], origin[2]+edge]))
+    #masses[5] = Mass(mass, np.array([origin[0] + edge, origin[1], origin[2]+edge]))
+    #masses[6] = Mass(mass, np.array([origin[0]+edge, origin[1]+edge, origin[2] + edge]))
+    #masses[7] = Mass(mass, np.array([origin[0], origin[1]+edge, origin[2]+edge]))
+
+    #make springs
+    for i, mass in enumerate(masses):
+        j = i
+        while j < len(masses):
+            length = np.linalg.norm(mass.position - masses[j].position)
+            if length > 0:
+                spring = Spring(k, length, [mass, masses[j]])
+                springs.append(spring)
+            j +=1
+
+    return masses, springs
+
+def breathe(masses):
+    for i, mass in enumerate(masses):
+        mass = masses[i]
+        if i > 4: # top vertices
+            mass.position[2] = mass.position[2] + np.sin(global_time * 100)/1000
+        if i == 0 or i == 3 or i == 4 or i == 7:
+            mass.position[0] = mass.position[0] - np.sin(global_time * 100)/2000
+            mass.position[1] = mass.position[1] - np.sin(global_time * 100)/2000
+        else:
+            mass.position[0] = mass.position[0] + np.sin(global_time * 100)/2000
+            mass.position[1] = mass.position[1] + np.sin(global_time * 100)/2000
+
 def rotateCube(passmass):
     a = np.random.rand() * math.pi
     trans_x = np.array([[1, 0, 0],
@@ -61,6 +103,7 @@ def rotateCube(passmass):
 
 def update_vertexplot(num, masses, vertexplot):
     calculate_forces()
+    #breathe(masses)
     data = [[mass.position[0], mass.position[1], mass.position[2]] for mass in masses]
     x = [row[0] for row in data]
     y = [row[1] for row in data]
@@ -81,12 +124,16 @@ def update_vertexplot(num, masses, vertexplot):
     springplot[0].set_data([x,y])
     springplot[0].set_3d_properties(z)
 
+    global global_time
+    global_time = global_time + TIMESTEP
+
     return vertexplot
 
 def calculate_forces():
     # YOUR CALCULATIONS HERE
     # REMMEBER ITS IN 3D, EVERYTHING IS A VECTOR
     forces = []
+    avg_velocity = 0
     for mass in masses:
         force = mass.mass * GRAVITY
 
@@ -119,28 +166,25 @@ def calculate_forces():
         position = mass.position + velocity * TIMESTEP
         mass.update(position, velocity, acceleration, 0)
 
+        #f.write(str(0.5 * 0.1 * np.linalg.norm(mass.position[2]) ** 2)+'\n')
+
+
+        avg_velocity += velocity
+
+        # write data to file every like 
+        #fk.write(str(0.5 * 0.1 * np.linalg.norm(avg_velocity[0]) ** 2)+'\n')
+
+
 # Attaching 3D axis to the figure
 fig = plt.figure()
 ax = p3.Axes3D(fig)
 
 # One 3D Cube
+#masses, springs = gen_square(0.15, [.5, 0.5, 0.5])
 masses, springs = gen_square(0.15, [.5, 0.5, 0.5])
-masses2, spring2 = gen_square(0.15, [0.2, 0.2, 0.7])
-masses3, spring3 = gen_square(0.1, [0.4, 0.4, 1.0])
-
-rotateCube(masses)
-rotateCube(masses2)
-rotateCube(masses3)
-
-for mass2 in masses2:
-    masses.append(mass2)
-for spring2 in spring2:
-    springs.append(spring2)
-
-for mass3 in masses3:
-    masses.append(mass3)
-for spring3 in spring3:
-    springs.append(spring3)
+#rotateCube(masses)
+#f = open("potential.txt","w+")
+#fk = open("kinetic.txt","w+")
 
 data = np.array([[mass.position[0], mass.position[1], mass.position[2]] for mass in masses])
 sdata = []
@@ -149,6 +193,7 @@ for i, spring in enumerate(springs):
     sdata.append(spring.masses[1].position)
 sdata = np.array(sdata)
 
+# Separate the vertices into separate plots
 colors = cm.rainbow(np.linspace(0, 1, len(masses)))
 vertexplot = [None] * len(masses)
 for i, (mass, color) in enumerate(zip(masses, colors)):
@@ -171,6 +216,6 @@ ax.set_title('Physics Cube')
 
 # Creating the Animation object
 line_ani = animation.FuncAnimation(fig, update_vertexplot, fargs=(masses, vertexplot),
-                                   interval=15, blit=False)
+                                   interval=5, blit=False)
 
 plt.show()
