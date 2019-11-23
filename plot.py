@@ -75,7 +75,7 @@ def gen_tetrahedron(edge, origin):
                 springs.append(spring)
             j +=1
 
-    return masses, springs
+    return masses, asprings
 
 def breathe(masses):
     for i, mass in enumerate(masses):
@@ -88,6 +88,10 @@ def breathe(masses):
         else:
             mass.position[0] = mass.position[0] + np.sin(global_time * 100)/2000
             mass.position[1] = mass.position[1] + np.sin(global_time * 100)/2000
+
+def locomotion():
+    w = 1 
+    L = a + b * np.sin(w * global_time + c)
 
 def rotateCube(passmass):
     a = np.random.rand() * math.pi
@@ -130,8 +134,6 @@ def update_vertexplot(num, masses, vertexplot):
     return vertexplot
 
 def calculate_forces():
-    # YOUR CALCULATIONS HERE
-    # REMMEBER ITS IN 3D, EVERYTHING IS A VECTOR
     forces = []
     avg_velocity = 0
     for mass in masses:
@@ -166,11 +168,9 @@ def calculate_forces():
         position = mass.position + velocity * TIMESTEP
         mass.update(position, velocity, acceleration, 0)
 
+        """ ENERGY LOGGING """
         #f.write(str(0.5 * 0.1 * np.linalg.norm(mass.position[2]) ** 2)+'\n')
-
-
-        avg_velocity += velocity
-
+        #avg_velocity += velocity
         # write data to file every like 
         #fk.write(str(0.5 * 0.1 * np.linalg.norm(avg_velocity[0]) ** 2)+'\n')
 
@@ -186,6 +186,7 @@ masses, springs = gen_square(0.15, [.5, 0.5, 0.5])
 #f = open("potential.txt","w+")
 #fk = open("kinetic.txt","w+")
 
+# Spring Data for Plotting
 data = np.array([[mass.position[0], mass.position[1], mass.position[2]] for mass in masses])
 sdata = []
 for i, spring in enumerate(springs):
